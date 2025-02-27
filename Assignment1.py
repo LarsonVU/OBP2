@@ -86,7 +86,7 @@ def run_sim(mu1, mu2, mu3, B1, B2, max_sim_time):
     queue2 = 0
 
     m1_done = exp_time(mu1)
-    m2_done = m1_done + exp_time(mu2)
+    m2_done = float('inf')
     m3_done = m2_done + exp_time(mu3)
 
     produced = 0    
