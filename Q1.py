@@ -41,7 +41,7 @@ def iterate_prob_matrix(rates, buffers):
     pi = [1/len(P) for _ in range(len(P))]
 
     tolerance = 1e-6
-    max_iters = 100
+    max_iters = 10000
     diff = float('inf')
     iters = 0
 
@@ -69,5 +69,5 @@ for i in range(B1 + 2):
 
         
 #throughput = mu1 (1- sum(B+1, i))
-throughput_a = min(mu1 * (1- sum([pi[access[(B1+1,i,0,0)][0]] for i in range(B2 +2)])), mu2 * (1- sum([pi[access[(i,B2+1,0,0)][0]] for i in range(B1 +2)])), mu3)
+throughput_a = mu1 * (1- sum([pi[access[(B1+1,i,0,0)][0]] for i in range(B2 +2)])) #, mu2 * (1- sum([pi[access[(i,B2+1,0,0)][0]] for i in range(B1 +2)])), mu3)
 print(throughput_a)
