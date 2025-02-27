@@ -6,7 +6,7 @@ def prob_calculator(next_state, current_state, rates, buffers):
     active_rates = []
     if current_state[0] < buffers[0] +1:
         active_rates.append(rates[0])
-    if current_state[0] > 0 and current_state[1] < buffers[0] +1:
+    if current_state[0] > 0 and current_state[1] < buffers[1] +1:
         active_rates.append(rates[1])
     if current_state[1] > 0:
         active_rates.append(rates[2])
@@ -37,11 +37,12 @@ def create_prob_matrix(rates, buffers):
 def iterate_prob_matrix(rates, buffers):
 
     P, access = create_prob_matrix(rates, buffers)
-
+    # for j in range(len(P)):
+    #     print([ round(i,2) for i in P[j]])
     pi = [1/len(P) for _ in range(len(P))]
 
     tolerance = 1e-6
-    max_iters = 10000
+    max_iters = 1000
     diff = float('inf')
     iters = 0
 
@@ -69,5 +70,5 @@ for i in range(B1 + 2):
 
         
 #throughput = mu1 (1- sum(B+1, i))
-throughput_a = mu1 * (1- sum([pi[access[(B1+1,i,0,0)][0]] for i in range(B2 +2)])) #, mu2 * (1- sum([pi[access[(i,B2+1,0,0)][0]] for i in range(B1 +2)])), mu3)
+throughput_a = min( mu1 * (1- sum([pi[access[(B1+1,i,0,0)][0]] for i in range(B2 +2)])), mu2 * (1- sum([pi[access[(i,B2+1,0,0)][0]] for i in range(B1 +2)])), mu3* (1- sum([pi[access[(i,0,0,0)][0]] for i in range(B1 +2)])))
 print(throughput_a)

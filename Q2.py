@@ -151,12 +151,15 @@ def run_sim_exponential(mus, max_buffer_sizes, max_runtime):
         machine = find_machine_first_completed(first_machine)
         current_time = machine.completeService()
 
-    print(max_runtime / first_machine.next.next.completed_items)
+    
     return first_machine
 
-mus = [1, 1.1, 0.9]
-max_buffer_sizes = [5, 5]
 
-inf = float('inf')
-print(inf - 1)
-run_sim_exponential(mus, max_buffer_sizes, 100000)
+if __name__ == '__main__':
+    mus = [1, 1.1, 0.9]
+    max_buffer_sizes = [15, 15]
+
+    inf = float('inf')
+    print(inf - 1)
+    m1 = run_sim_exponential(mus, max_buffer_sizes, 100000)
+    print( m1.next.next.completed_items /100000)
