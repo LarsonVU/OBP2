@@ -42,8 +42,8 @@ def create_prob_matrix(rates, buffers):
 def iterate_prob_matrix(rates, buffers):
 
     P, access = create_prob_matrix(rates, buffers)
-    for j in range(len(P)):
-        print([ round(i,2) for i in P[j]])
+    # for j in range(len(P)):
+    #     print([ round(i,2) for i in P[j]])
     pi = [1/len(P) for _ in range(len(P))]
 
     tolerance = 1e-6
@@ -79,7 +79,10 @@ for i in range(B1 + 2):
 
 new_pi = [i / sum(new_pi) for i in new_pi]
 
-        
+for i in range(B1 + 2):
+    for j in range(B2 + 2):
+        print(f"pi({i},{j}) = {new_pi[access[(i,j,0,0)][0]]}")
+
 #throughput = mu1 (1- sum(B+1, i))
 throughput_a =  mu1 * (1- sum([new_pi[access[(B1+1,i,0,0)][0]] for i in range(B2 +2)]))
 print(throughput_a)
