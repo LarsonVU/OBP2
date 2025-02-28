@@ -1,8 +1,6 @@
 import usefull_functions as uf
 
-def prob_calculator(next_state, current_state, rates, buffers):
-    if -1 in next_state or any(next_state[i]>= buffers[i] +2 for i in range(len(next_state))):
-        return 0
+def total_rates(current_state, rates, buffers):
     active_rates = []
     if current_state[0] < buffers[0] +1:
         active_rates.append(rates[0])
@@ -10,6 +8,13 @@ def prob_calculator(next_state, current_state, rates, buffers):
         active_rates.append(rates[1])
     if current_state[1] > 0:
         active_rates.append(rates[2])
+    return active_rates
+
+def prob_calculator(next_state, current_state, rates, buffers):
+    if -1 in next_state or any(next_state[i]>= buffers[i] +2 for i in range(len(next_state))):
+        return 0
+    
+    active_rates = total_rates(current_state, rates, buffers)
  
     if tuple(a - b for a, b in zip(next_state, current_state)) == (1,0):
         return rates[0] /sum(active_rates)
@@ -37,8 +42,8 @@ def create_prob_matrix(rates, buffers):
 def iterate_prob_matrix(rates, buffers):
 
     P, access = create_prob_matrix(rates, buffers)
-    # for j in range(len(P)):
-    #     print([ round(i,2) for i in P[j]])
+    for j in range(len(P)):
+        print([ round(i,2) for i in P[j]])
     pi = [1/len(P) for _ in range(len(P))]
 
     tolerance = 1e-6
@@ -64,11 +69,17 @@ B2 = 5
 pi, access = iterate_prob_matrix([mu1, mu2, mu3], [B1, B2])
 # Display stationary distribution
 # State (i,j) indicates i people waiting to finish service in queue 2, j people waiting to finish service in queue 3
+# Time in state (i,j) is 1/sum(rates)
+new_pi = []
 for i in range(B1 + 2):
     for j in range(B2 + 2):
         print(f"pi({i},{j}) = {pi[access[(i,j,0,0)][0]]}")
+        print(f"Time in state ({i}, {j}): ", 1/sum(total_rates((i,j), [mu1, mu2, mu3], [B1, B2])))
+        new_pi.append(pi[access[(i,j,0,0)][0]] * 1/sum(total_rates((i,j), [mu1, mu2, mu3], [B1, B2])))
+
+new_pi = [i / sum(new_pi) for i in new_pi]
 
         
 #throughput = mu1 (1- sum(B+1, i))
-throughput_a = min( mu1 * (1- sum([pi[access[(B1+1,i,0,0)][0]] for i in range(B2 +2)])), mu2 * (1- sum([pi[access[(i,B2+1,0,0)][0]] for i in range(B1 +2)])), mu3* (1- sum([pi[access[(i,0,0,0)][0]] for i in range(B1 +2)])))
+throughput_a =  mu1 * (1- sum([new_pi[access[(B1+1,i,0,0)][0]] for i in range(B2 +2)]))
 print(throughput_a)
