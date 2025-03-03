@@ -161,11 +161,24 @@ def run_sim_exponential(mus, max_buffer_sizes, max_runtime, warmup_time):
 
     run_loop(first_machine, max_runtime + warmup_time, warmup_time)
 
+<<<<<<< HEAD
     print(first_machine.next.next.completed_items)
     print(first_machine.next.next.completed_items / max_runtime)
+=======
+    
+>>>>>>> 5da15e8a4a1f69d1b9b03a71863b9de657927664
     return first_machine
 
-mus = [1, 1.1, 0.9]
-max_buffer_sizes = [5, 5]
 
+<<<<<<< HEAD
 run_sim_exponential(mus, max_buffer_sizes, 100000, 10000)
+=======
+if __name__ == '__main__':
+    mus = [1, 1.1, 0.9]
+    max_buffer_sizes = [15, 15]
+
+    inf = float('inf')
+    print(inf - 1)
+    m1 = run_sim_exponential(mus, max_buffer_sizes, 100000)
+    print( m1.next.next.completed_items /100000)
+>>>>>>> 5da15e8a4a1f69d1b9b03a71863b9de657927664
