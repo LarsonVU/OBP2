@@ -21,4 +21,20 @@ def find_min_and_index(arr):
     
     return min, min_index
 
-print(find_min_and_index([0, -1, 2, -1.5]))
+def transpose(m):
+    if not m:
+        return []
+    
+    rows, cols = len(m), len(m[0])
+    t = [[0] * rows for _ in range(cols)]
+
+    for i in range(rows):
+        for j in range(cols):
+            t[j][i] = m[i][j]
+
+    return t
+
+matrix = [
+    [1, 2, 3],
+    [4, 5, 6]
+]

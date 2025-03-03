@@ -18,6 +18,9 @@ class Machine:
     def __str__(self):
         return f'{self.id}'
     
+    def resetCounter(self):
+        self.completed_items = 0
+    
     def addNext(self, machine):
         self.next = machine
         machine.prev = self
@@ -141,22 +144,28 @@ def create_machine_list(mus, max_buffer_sizes):
     
     return first_machine
 
-def run_sim_exponential(mus, max_buffer_sizes, max_runtime):
+def run_loop(machines, runtime, start_time):
+    current_time = start_time
+
+    while current_time < runtime:
+        machine = find_machine_first_completed(machines)
+        current_time = machine.completeService()
+
+def run_sim_exponential(mus, max_buffer_sizes, max_runtime, warmup_time):
     first_machine = create_machine_list(mus, max_buffer_sizes)
     first_machine.startService(0)
 
-    current_time = 0
+    run_loop(first_machine, warmup_time, 0)
+    first_machine.next.next.resetCounter()
+    print(first_machine.next.next.completed_items)
 
-    while current_time < max_runtime:
-        machine = find_machine_first_completed(first_machine)
-        current_time = machine.completeService()
+    run_loop(first_machine, max_runtime + warmup_time, warmup_time)
 
-    print(max_runtime / first_machine.next.next.completed_items)
+    print(first_machine.next.next.completed_items)
+    print(first_machine.next.next.completed_items / max_runtime)
     return first_machine
 
 mus = [1, 1.1, 0.9]
 max_buffer_sizes = [5, 5]
 
-inf = float('inf')
-print(inf - 1)
-run_sim_exponential(mus, max_buffer_sizes, 100000)
+run_sim_exponential(mus, max_buffer_sizes, 100000, 10000)

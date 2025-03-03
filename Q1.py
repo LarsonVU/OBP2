@@ -1,4 +1,5 @@
 import usefull_functions as uf
+import numpy as np
 
 def prob_calculator(next_state, current_state, rates, buffers):
     if -1 in next_state or any(next_state[i]>= buffers[i] +2 for i in range(len(next_state))):
@@ -38,18 +39,18 @@ def iterate_prob_matrix(rates, buffers):
 
     P, access = create_prob_matrix(rates, buffers)
 
-    pi = [1/len(P) for _ in range(len(P))]
+    pi = np.array([1/len(P) for _ in range(len(P))])
 
     tolerance = 1e-6
-    max_iters = 10000
+    max_iters = 1000
     diff = float('inf')
     iters = 0
 
     # Iterative process
     while diff > tolerance and iters < max_iters:
-        pi_next = uf.matmul([pi], P)[0]
-        diff = max(abs(pi_next[i] - pi[i]) for i in range(len(pi)))
-        pi = pi_next
+        pi_t_next = pi.T @ P
+        diff = max(abs(pi_t_next[i] - pi[i]) for i in range(len(pi)))
+        pi = pi_t_next
         iters += 1
 
     return pi, access
@@ -57,8 +58,8 @@ def iterate_prob_matrix(rates, buffers):
 mu1 = 1
 mu2 = 1.1
 mu3 = 0.9
-B1 = 5
-B2 = 5
+B1 = 15
+B2 = 15 
 
 pi, access = iterate_prob_matrix([mu1, mu2, mu3], [B1, B2])
 # Display stationary distribution
