@@ -169,3 +169,27 @@ if __name__ == '__main__':
     inf = float('inf')
     m1 = run_sim_exponential(mus, max_buffer_sizes, 100000, 10000)
     print(m1.next.next.completed_items /100000)
+
+    num_simulations = 1000
+    results = []
+    max_runtime = 10000
+    warmup_length = 1000
+    # Run the simulations
+    for _ in range(num_simulations):
+        first_machine = run_sim_exponential(mus, max_buffer_sizes, max_runtime, warmup_length)
+        results.append(first_machine.next.next.completed_items / max_runtime)
+
+    # Sort results for percentile calculation
+    results.sort()
+
+    mean = sum(results)/num_simulations
+    std = (sum([(r-mean)**2 for r in results])/num_simulations)**(0.5)
+
+    # Compute the 95% confidence interval (t_999,0.975 = 1.962)
+    lower = mean - 1.962 * std / num_simulations**(0.5)
+    upper = mean + 1.962 * std / num_simulations**(0.5)
+
+    # Print only the confidence interval
+    print(f"[{lower:.4f}, {upper:.4f}]")
+    print("Mean throughput B: ", f"{mean:.4f}")
+    print("Standard Deviation: ", f"{std:.4f}")

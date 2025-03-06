@@ -105,7 +105,7 @@ def plot_simulation_results(results):
     # Show the plot
     plt.show()
 
-plot_simulation_results(results)
+#plot_simulation_results(results)
 
 ### Question 3
 # Number of simulations
@@ -135,4 +135,4 @@ for i in range(1,4):
     print("Mean throughput C: ", f"{mean:.4f}")
     print("Standard Deviation: ", f"{std:.4f}")
 
-    plot_simulation_results(results)
+    #plot_simulation_results(results)
