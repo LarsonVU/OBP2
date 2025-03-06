@@ -1,5 +1,5 @@
 import usefull_functions as uf
-import numpy as np
+
 
 def total_rates(current_state, rates, buffers):
     active_rates = []
@@ -49,7 +49,6 @@ def iterate_prob_matrix(rates, buffers):
     # for j in range(len(P)):
     #     print([ round(i,2) for i in P[j]])
     pi = [1/len(P) for _ in range(len(P))]
-    pi = np.array(pi)
 
     tolerance = 1e-10
     max_iters = 10000
@@ -59,26 +58,28 @@ def iterate_prob_matrix(rates, buffers):
     # Iterative process
     while diff > tolerance and iters < max_iters:
 
-        pi_t_next = pi.T @ P
+        pi_t_next = uf.matmul([pi], P)[0]
         diff = max(abs(pi_t_next[i] - pi[i]) for i in range(len(pi)))
         pi = pi_t_next
         iters += 1
 
     return pi, access
 
-mu1 = 1
-mu2 = 1.1
-mu3 = 0.9
 
-B1 = 5
-B2 = 5 
+if __name__ == '__main__':
+    mu1 = 1
+    mu2 = 1.1
+    mu3 = 0.9
 
-pi, access = iterate_prob_matrix([mu1, mu2, mu3], [B1, B2])
-# Display stationary distribution
-for i in range(B1 + 2):
-    for j in range(B2 + 2):
-        print(f"pi({i},{j}) = {pi[access[(i,j,0,0)][0]]}")
+    B1 = 5
+    B2 = 5 
 
-#throughput = mu1 (1- sum(B+1, i))
-throughput_a =  mu1 * (1- sum([pi[access[(B1+1,i,0,0)][0]] for i in range(B2 +2)]))
-print(throughput_a)
+    pi, access = iterate_prob_matrix([mu1, mu2, mu3], [B1, B2])
+    # Display stationary distribution
+    for i in range(B1 + 2):
+        for j in range(B2 + 2):
+            print(f"pi({i},{j}) = {pi[access[(i,j,0,0)][0]]}")
+
+    #throughput = mu1 (1- sum(B+1, i))
+    throughput_a =  mu1 * (1- sum([pi[access[(B1+1,i,0,0)][0]] for i in range(B2 +2)]))
+    print(throughput_a)

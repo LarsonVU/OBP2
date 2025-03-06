@@ -157,7 +157,6 @@ def run_sim_exponential(mus, max_buffer_sizes, max_runtime, warmup_time):
 
     run_loop(first_machine, warmup_time, 0)
     first_machine.next.next.resetCounter()
-    print(first_machine.next.next.completed_items)
 
     run_loop(first_machine, max_runtime + warmup_time, warmup_time)
 
@@ -168,6 +167,5 @@ if __name__ == '__main__':
     max_buffer_sizes = [5, 5]
 
     inf = float('inf')
-    print(inf - 1)
     m1 = run_sim_exponential(mus, max_buffer_sizes, 100000, 10000)
     print(m1.next.next.completed_items /100000)
