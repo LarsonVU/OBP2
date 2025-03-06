@@ -41,19 +41,20 @@ def create_prob_matrix(rates, buffers):
 
 
 def iterate_prob_matrix(rates, buffers):
-
     P, access = create_prob_matrix(rates, buffers)
     # for j in range(len(P)):
     #     print([ round(i,2) for i in P[j]])
     pi = [1/len(P) for _ in range(len(P))]
+    pi = np.array(pi)
 
     tolerance = 1e-6
-    max_iters = 1000
+    max_iters = 10000    
     diff = float('inf')
     iters = 0
 
     # Iterative process
     while diff > tolerance and iters < max_iters:
+
         pi_t_next = pi.T @ P
         diff = max(abs(pi_t_next[i] - pi[i]) for i in range(len(pi)))
         pi = pi_t_next
@@ -64,8 +65,9 @@ def iterate_prob_matrix(rates, buffers):
 mu1 = 1
 mu2 = 1.1
 mu3 = 0.9
-B1 = 15
-B2 = 15 
+
+B1 = 5
+B2 = 5 
 
 pi, access = iterate_prob_matrix([mu1, mu2, mu3], [B1, B2])
 # Display stationary distribution
@@ -85,10 +87,5 @@ for i in range(B1 + 2):
         print(f"pi({i},{j}) = {new_pi[access[(i,j,0,0)][0]]}")
 
 #throughput = mu1 (1- sum(B+1, i))
-<<<<<<< HEAD
-throughput_a = mu1 * (1- sum([pi[access[(B1+1,i,0,0)][0]] for i in range(B2 +2)])) #, mu2 * (1- sum([pi[access[(i,B2+1,0,0)][0]] for i in range(B1 +2)])), mu3)
-print(throughput_a)
-=======
 throughput_a =  mu1 * (1- sum([new_pi[access[(B1+1,i,0,0)][0]] for i in range(B2 +2)]))
 print(throughput_a)
->>>>>>> 5da15e8a4a1f69d1b9b03a71863b9de657927664
