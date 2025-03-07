@@ -81,5 +81,8 @@ if __name__ == '__main__':
             print(f"pi({i},{j}) = {pi[access[(i,j,0,0)][0]]}")
 
     #throughput = mu1 (1- sum(B+1, i))
-    throughput_a =  mu1 * (1- sum([pi[access[(B1+1,i,0,0)][0]] for i in range(B2 +2)]))
-    print(throughput_a)
+    throughput_a =  mu1 * (1- sum([pi[access[(B1 + 1,i,0,0)][0]] for i in range(B2 +2)]))
+    #throughput_a = (1 - sum([pi[access[(i,0,0,0)][0]] for i in range(B1 +2)])) * mu3
+    #throughput_a =  mu2 * (1- sum([pi[access[(i,B2+1,0,0)][0]] for i in range(B2 +2)]))
+
+    #print(throughput_a)

@@ -130,19 +130,14 @@ def print_completion_times(first_machine):
 
     print(completion_times)
 
-def create_machine_list(mus, max_buffer_sizes, deterministic_index = None):
+def create_machine_list(mus, max_buffer_sizes):
     num_machines = len(mus)
 
-    if deterministic_index == 0:
-        first_machine = Machine(1, 1/mus[0])
-
-    else: first_machine = ExponentialMachine(1, mus[0])
+    first_machine = ExponentialMachine(1, mus[0])
     prev_machine = first_machine
 
     for m in range(num_machines - 1):
-        if deterministic_index == m + 2:
-            machine = Machine(m + 2, 1/mus[m + 1], max_buffer_sizes[m])
-        else: machine = ExponentialMachine(m + 2, mus[m + 1], max_buffer_sizes[m])
+        machine = ExponentialMachine(m + 2, mus[m + 1], max_buffer_sizes[m])
 
         prev_machine.addNext(machine)
         prev_machine = machine
@@ -156,8 +151,8 @@ def run_loop(machines, runtime, start_time):
         machine = find_machine_first_completed(machines)
         current_time = machine.completeService()
 
-def run_sim_deterministic(mus, max_buffer_sizes, max_runtime, warmup_time, deterministic_index):
-    first_machine = create_machine_list(mus, max_buffer_sizes, deterministic_index)
+def run_sim_exponential(mus, max_buffer_sizes, max_runtime, warmup_time):
+    first_machine = create_machine_list(mus, max_buffer_sizes)
     first_machine.startService(0)
 
     run_loop(first_machine, warmup_time, 0)
@@ -172,31 +167,29 @@ if __name__ == '__main__':
     max_buffer_sizes = [5, 5]
 
     inf = float('inf')
-    m1 = run_sim_deterministic(mus, max_buffer_sizes, 100000, 10000, 3)
+    m1 = run_sim_exponential(mus, max_buffer_sizes, 100000, 10000)
     print(m1.next.next.completed_items /100000)
 
     num_simulations = 1000
+    results = []
     max_runtime = 10000
     warmup_length = 1000
     # Run the simulations
-    for i in range(1,4):
-        results = []
-        print("Deterministic Machine: ", i)
-        for _ in range(num_simulations):
-            first_machine = run_sim_deterministic(mus, max_buffer_sizes, max_runtime, warmup_length, deterministic_index=i)
-            results.append(first_machine.next.next.completed_items / max_runtime)
+    for _ in range(num_simulations):
+        first_machine = run_sim_exponential(mus, max_buffer_sizes, max_runtime, warmup_length)
+        results.append(first_machine.next.next.completed_items / max_runtime)
 
-        # Sort results for percentile calculation
-        results.sort()
+    # Sort results for percentile calculation
+    results.sort()
 
-        mean = sum(results)/num_simulations
-        std = (sum([(r-mean)**2 for r in results])/num_simulations)**(0.5)
+    mean = sum(results)/num_simulations
+    std = (sum([(r-mean)**2 for r in results])/num_simulations)**(0.5)
 
-        # Compute the 95% confidence interval (t_999,0.975 = 1.962)
-        lower = mean - 1.962 * std / num_simulations**(0.5)
-        upper = mean + 1.962 * std / num_simulations**(0.5)
+    # Compute the 95% confidence interval (t_999,0.975 = 1.962)
+    lower = mean - 1.962 * std / num_simulations**(0.5)
+    upper = mean + 1.962 * std / num_simulations**(0.5)
 
-        # Print only the confidence interval
-        print(f"[{lower:.4f}, {upper:.4f}]")
-        print("Mean throughput C: ", f"{mean:.4f}")
-        print("Standard Deviation: ", f"{std:.4f}")
+    # Print only the confidence interval
+    print(f"[{lower:.4f}, {upper:.4f}]")
+    print("Mean throughput B: ", f"{mean:.4f}")
+    print("Standard Deviation: ", f"{std:.4f}")

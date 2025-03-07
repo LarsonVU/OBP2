@@ -50,7 +50,6 @@ mu3 = 0.9
 B1 = 5
 B2 = 5 
 
-
 pi, access = Q1.iterate_prob_matrix([mu1, mu2, mu3], [B1, B2])
 throughput_a =  mu1 * (1- sum([pi[access[(B1+1,i,0,0)][0]] for i in range(B2 +2)]))
 print("Throughput A:", throughput_a)
@@ -64,10 +63,11 @@ num_simulations = 1000
 results = []
 max_runtime = 10000
 warmup_length = 1000
+
 # Run the simulations
 for _ in range(num_simulations):
-    first_machine = Q2.run_sim_exponential([1, 1.1, 0.9], [5, 5], max_runtime, warmup_length)
-    results.append(first_machine.next.next.completed_items / max_runtime)
+    throughput = Q2.run_sim([1, 1.1, 0.9], [5, 5], max_runtime, warmup_length)
+    results.append(throughput)
 
 # Sort results for percentile calculation
 results.sort()
@@ -115,10 +115,10 @@ warmup_length = 1000
 # Run the simulations
 for i in range(1,4):
     results = []
-    print("Deterministic Machine: ", i)
+    print("\nDeterministic Machine: ", i)
     for _ in range(num_simulations):
-        first_machine = Q3.run_sim_deterministic([1, 1.1, 0.9], [5, 5], max_runtime, warmup_length, deterministic_index=i)
-        results.append(first_machine.next.next.completed_items / max_runtime)
+        throughput = Q3.run_sim([1, 1.1, 0.9], [5, 5], max_runtime, warmup_length, i)
+        results.append(throughput)
 
     # Sort results for percentile calculation
     results.sort()

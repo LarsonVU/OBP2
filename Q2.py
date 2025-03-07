@@ -1,193 +1,104 @@
 import math
 import random
 
-class Machine:
-    def __init__(self, id, expected_service_time, buffer_size = None):
-        self.id = id
-        self.next = None
-        self.prev = None
-        self.expected_service_time = expected_service_time
-        self.completion_time = float('inf')
-        self.busy = False
-        self.completed_items = 0
+def sample_exponential(rate):
+    return -math.log(1.0 - random.random()) / rate
 
-        if buffer_size != None:
-            self.buffer = Buffer(buffer_size)
-        else: self.buffer = None
-    
-    def __str__(self):
-        return f'{self.id}'
-    
-    def resetCounter(self):
-        self.completed_items = 0
-    
-    def addNext(self, machine):
-        self.next = machine
-        machine.prev = self
+def sample_next_time(rates):
+    total_rate = sum(rates)
+    if total_rate == 0:
+        print(rates)
+    return sample_exponential(total_rate)
 
-    def getServiceTime(self):
-        return self.expected_service_time
+def sample_machine(rates):
+    x = random.random()
 
-    def hasBuffer(self):
-        return self.buffer != None
-    
-    def nextBufferNotFull(self):
-        return not self.next or not self.next.buffer.isFull()
-    
-    def hasItemToProcess(self):
-        return not self.hasBuffer() or not self.buffer.isEmpty()
-    
-    def prevBufferNotEmpty(self):
-        return self.prev and (not self.prev.hasBuffer() or not self.prev.buffer.isEmpty())
+    total_rate = sum(rates)
+    probs = [rate / total_rate for rate in rates]
+    thresholds = [0]
 
-    def startService(self, current_time):
-        # Remove item from buffer
-        if self.hasBuffer():
-            self.buffer.removeItem()
+    for i, p in enumerate(probs):
+        thresholds.append(thresholds[i] + p)
 
-        # Set completion time and status (idle or busy)
-        self.completion_time = current_time + self.getServiceTime()
-        self.busy = True
+    index = 0
 
-        # See if the previous machine was idle because the buffer was full
-        if self.prevBufferNotEmpty() and not self.prev.busy:
-            self.prev.startService(current_time)
+    while x > thresholds[index]:
+        index += 1
+
+    return index
+
+def calculate_active_rates(mus, max_buffer_sizes, state):
+    rates = [0,0,0]
+
+    if state[0] != max_buffer_sizes[0] + 1:
+        rates[0] = mus[0]
+
+    if state[0] >= 1 and state[1] != max_buffer_sizes[1] + 1:
+        rates[1] = mus[1]
+
+    if state[1] >= 1:
+        rates[2] = mus[2]
+
+    return rates
+
+def run_loop(start_state, mus, max_buffer_sizes, max_runtime):
+    current_time = 0
+    state = start_state
+    active_rates = [mus[0], 0, 0]
+    total = 0
+
+    while current_time < max_runtime:        
+        active_rates = calculate_active_rates(mus, max_buffer_sizes, state)
+        next_time = current_time + sample_next_time(active_rates)
+
+        current_time = next_time
         
-    def completeService(self):
-        # Get time item was completed
-        time_completion = self.completion_time
+        machine = sample_machine(active_rates)
 
-        # Push item to the next buffer
-        if self.next and not self.next.buffer.isFull():
-            self.next.buffer.addItem()
+        if machine == 1:
+            state[0] += 1
 
-            # If idle and next buffer is not full, immediately start service 
-            if not self.next.busy and (not self.next.next or not self.next.next.buffer.isFull()):
-                self.next.startService(self.completion_time)
-        
-        # If possible start service of new item
-        if self.nextBufferNotFull() and self.hasItemToProcess():
-            self.startService(self.completion_time)
+        if machine == 2:
+            state[1] += 1
+            state[0] -= 1
 
-        else: 
-            self.busy = False
-            self.completion_time = float('inf')
+        if machine == 3:
+            total += 1
+            state[1] -= 1
+                
+    return state, total
 
-        self.completed_items += 1
-
-        return time_completion
-
-class Buffer:
-    def __init__(self, max_size):
-        self.max_size = max_size + 1
-        self.current_size = 0
-
-    def __str__(self):
-        return f'{self.current_size}'
-    
-    def isFull(self):
-        return self.current_size == self.max_size
-    
-    def isEmpty(self):
-        return self.current_size == 0
-    
-    def addItem(self):
-        self.current_size += 1
-
-    def removeItem(self):
-        self.current_size -= 1
-
-class ExponentialMachine(Machine):
-    def __init__(self, id, mu, buffer_size=None):
-        super().__init__(id, 1 / mu, buffer_size)
-        self.mu = mu
-    
-    def getServiceTime(self):
-        return -math.log(1.0 - random.random()) / self.mu
-
-def find_machine_first_completed(first_machine):
-    completion_time = first_machine.completion_time
-    machine = first_machine
-
-    current_machine = first_machine
-
-    while current_machine.next:
-        current_machine = current_machine.next
-
-        if current_machine.completion_time < completion_time:
-            completion_time = current_machine.completion_time
-            machine = current_machine
-
-    return machine
-
-def print_completion_times(first_machine):
-    completion_times = [first_machine.completion_time]
-    current_machine = first_machine
-
-    while current_machine.next:
-        current_machine = current_machine.next
-        completion_times.append(current_machine.completion_time)
-
-    print(completion_times)
-
-def create_machine_list(mus, max_buffer_sizes):
-    num_machines = len(mus)
-
-    first_machine = ExponentialMachine(1, mus[0])
-    prev_machine = first_machine
-
-    for m in range(num_machines - 1):
-        machine = ExponentialMachine(m + 2, mus[m + 1], max_buffer_sizes[m])
-
-        prev_machine.addNext(machine)
-        prev_machine = machine
-    
-    return first_machine
-
-def run_loop(machines, runtime, start_time):
-    current_time = start_time
-
-    while current_time < runtime:
-        machine = find_machine_first_completed(machines)
-        current_time = machine.completeService()
-
-def run_sim_exponential(mus, max_buffer_sizes, max_runtime, warmup_time):
-    first_machine = create_machine_list(mus, max_buffer_sizes)
-    first_machine.startService(0)
-
-    run_loop(first_machine, warmup_time, 0)
-    first_machine.next.next.resetCounter()
-
-    run_loop(first_machine, max_runtime + warmup_time, warmup_time)
-
-    return first_machine
+def run_sim(mus, max_buffer_sizes, max_runtime, warmup):
+    start_state = [0, 0]
+    state, _ = run_loop(start_state, mus, max_buffer_sizes, warmup)
+    state, total = run_loop(state, mus, max_buffer_sizes, max_runtime)
+    return total / max_runtime
 
 if __name__ == '__main__':
     mus = [1, 1.1, 0.9]
     max_buffer_sizes = [5, 5]
+    max_runtime = 100000
+    warmup = 10000
 
-    inf = float('inf')
-    m1 = run_sim_exponential(mus, max_buffer_sizes, 100000, 10000)
-    print(m1.next.next.completed_items /100000)
+    throughput = run_sim(mus, max_buffer_sizes, max_runtime, warmup)
+    print(throughput)
 
-    num_simulations = 1000
+    num_sims = 1000
     results = []
+
     max_runtime = 10000
-    warmup_length = 1000
-    # Run the simulations
-    for _ in range(num_simulations):
-        first_machine = run_sim_exponential(mus, max_buffer_sizes, max_runtime, warmup_length)
-        results.append(first_machine.next.next.completed_items / max_runtime)
+    warmup = 1000
+    
+    for _ in range(num_sims):
+        throughput = run_sim(mus, max_buffer_sizes, max_runtime, warmup)
+        results.append(throughput)
 
-    # Sort results for percentile calculation
-    results.sort()
-
-    mean = sum(results)/num_simulations
-    std = (sum([(r-mean)**2 for r in results])/num_simulations)**(0.5)
+    mean = sum(results)/num_sims
+    std = (sum([(r-mean)**2 for r in results])/num_sims)**(0.5)
 
     # Compute the 95% confidence interval (t_999,0.975 = 1.962)
-    lower = mean - 1.962 * std / num_simulations**(0.5)
-    upper = mean + 1.962 * std / num_simulations**(0.5)
+    lower = mean - 1.962 * std / num_sims**(0.5)
+    upper = mean + 1.962 * std / num_sims**(0.5)
 
     # Print only the confidence interval
     print(f"[{lower:.4f}, {upper:.4f}]")
