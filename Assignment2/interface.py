@@ -1,6 +1,8 @@
 import streamlit as st
 import numpy as np
 import math
+import gurobipy
+from gurobipy import Model, GRB, quicksum
 
 
 def balance_equations(n, s, failure_rate, repair_rate, warm_standby, k):
@@ -61,11 +63,11 @@ with tab1:
         st.write(f"### System Up-Time Probability: {up_time:.4f}")
 
 def compute_cost(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required, component_cost, repair_cost, down_time_cost):
-    if num_components < num_required:
-        up_time = 0
-    else:
-        up_time = compute_up_time(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required)
-    return  (comp * component_cost) + (rep * repair_cost) + ((1 - up_time) * down_time_cost)
+        if num_components < num_required:
+            up_time = 0
+        else:
+            up_time = compute_up_time(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required)
+        return  (num_components * component_cost) + (num_repairmen * repair_cost) + ((1 - up_time) * down_time_cost)
 
 
 with tab2:
@@ -83,8 +85,8 @@ with tab2:
 
 
     if st.button("Compute Optimal Configuration"):
-        for comp in range(1,50):
-            for rep in range(1,50): 
+        for comp in range(1,80):
+            for rep in range(1,80): 
                 cost = compute_cost(comp, rep, failure_rate_b, repair_rate_b, warm_standby_b, num_required_b, component_cost, repair_cost, down_time_cost)
                 if cost < min_cost:
                     min_cost = cost
