@@ -85,12 +85,19 @@ with tab2:
 
 
     if st.button("Compute Optimal Configuration"):
-        for comp in range(1,80):
-            for rep in range(1,80): 
+        for comp in range(1, 170):
+            for rep in range(1, 170): 
                 cost = compute_cost(comp, rep, failure_rate_b, repair_rate_b, warm_standby_b, num_required_b, component_cost, repair_cost, down_time_cost)
                 if cost < min_cost:
                     min_cost = cost
                     optimal_config = (comp, rep)
+                elif comp > optimal_config[0] and rep > optimal_config[1] and optimal_config[0] > num_required_b:
+                    break
+            else:
+                # Continue outer loop if inner loop wasn't broken
+                continue
+            # Break outer loop if inner loop was broken
+            break
 
         st.write(f"### Optimal Configuration: {optimal_config[0]} components and {optimal_config[1]} repairmen")
 
