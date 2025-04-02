@@ -1,5 +1,5 @@
-import usefull_functions as uf
-
+def matmul(m1, m2):
+    return [[sum(a*b for a,b in zip(col, row)) for col in zip(*m2)] for row in m1]
 
 def total_rates(current_state, rates, buffers):
     active_rates = []
@@ -58,7 +58,7 @@ def iterate_prob_matrix(rates, buffers):
     # Iterative process
     while diff > tolerance and iters < max_iters:
 
-        pi_t_next = uf.matmul([pi], P)[0]
+        pi_t_next = matmul([pi], P)[0]
         diff = max(abs(pi_t_next[i] - pi[i]) for i in range(len(pi)))
         pi = pi_t_next
         iters += 1
