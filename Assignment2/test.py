@@ -36,15 +36,15 @@ def balance_equations(n, s, failure_rate, repair_rate, warm_standby, k):
     return state_probs
 
 def compute_up_time(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required):
-    state_matrix = balance_equations(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required)
-    up_time = sum([state_matrix[i] for i in range(0, num_components - num_required + 1)])
+    if num_components < num_required or num_repairmen == 0 or num_components == 0:
+        up_time = 0
+    else:
+        state_matrix = balance_equations(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required)
+        up_time = sum([state_matrix[i] for i in range(0, num_components - num_required + 1)])
     return up_time
 
 def compute_cost(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required, component_cost, repair_cost, down_time_cost):
-        if num_components < num_required:
-            up_time = 0
-        else:
-            up_time = compute_up_time(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required)
+        up_time = compute_up_time(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required)
         return  (num_components * component_cost) + (num_repairmen * repair_cost) + ((1 - up_time) * down_time_cost)
 
 

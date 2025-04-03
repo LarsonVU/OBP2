@@ -1,8 +1,6 @@
 import streamlit as st
 import numpy as np
 import math
-import gurobipy
-from gurobipy import Model, GRB, quicksum
 
 
 def balance_equations(n, s, failure_rate, repair_rate, warm_standby, k):
@@ -31,6 +29,7 @@ def balance_equations(n, s, failure_rate, repair_rate, warm_standby, k):
             state_probs = [pi_0 * ((k ** j) / math.factorial(j) * (lambda_mu_ratio ** j)) if j <= s else
                            pi_0 * ((k ** j) / (math.factorial(s) * (s ** (j - s))) * (lambda_mu_ratio ** j))
                            for j in range(0, n - k + 2)]
+            print(state_probs)
         else:
             def pi_0_inverse():
                 return sum([(k ** j) / math.factorial(j) * (lambda_mu_ratio ** j) for j in range(0, n - k + 2)])
@@ -41,8 +40,12 @@ def balance_equations(n, s, failure_rate, repair_rate, warm_standby, k):
     return state_probs
 
 def compute_up_time(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required):
-    state_matrix = balance_equations(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required)
-    up_time = sum([state_matrix[i] for i in range(0, num_components - num_required + 1)])
+    if num_components < num_required or num_repairmen == 0 or num_components == 0:
+        up_time = 0
+    else:
+        state_matrix = balance_equations(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required)
+        up_time = sum([state_matrix[i] for i in range(0, num_components - num_required + 1)])
+
     return up_time
 
 
@@ -63,10 +66,7 @@ with tab1:
         st.write(f"### System Up-Time Probability: {up_time:.4f}")
 
 def compute_cost(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required, component_cost, repair_cost, down_time_cost):
-        if num_components < num_required:
-            up_time = 0
-        else:
-            up_time = compute_up_time(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required)
+        up_time = compute_up_time(num_components, num_repairmen, failure_rate, repair_rate, warm_standby, num_required)
         return  (num_components * component_cost) + (num_repairmen * repair_cost) + ((1 - up_time) * down_time_cost)
 
 
@@ -83,15 +83,14 @@ with tab2:
     min_cost = float('inf')
     optimal_config = None
 
-
     if st.button("Compute Optimal Configuration"):
-        for comp in range(1, 170):
-            for rep in range(1, 170): 
-                cost = compute_cost(comp, rep, failure_rate_b, repair_rate_b, warm_standby_b, num_required_b, component_cost, repair_cost, down_time_cost)
+        for comp in range(0, 170):
+            for rep in range(0, 170): 
+                cost = compute_cost(comp, rep, failure_rate_b, repair_rate_b, warm_standby_b, num_required_b, component_cost, repair_cost, down_time_cost) 
                 if cost < min_cost:
                     min_cost = cost
-                    optimal_config = (comp, rep)
-                elif comp > optimal_config[0] and rep > optimal_config[1] and optimal_config[0] > num_required_b:
+                    optimal_config = (comp, rep)  
+                elif comp > optimal_config[0] and rep > optimal_config[1] and comp > num_required_b:
                     break
             else:
                 # Continue outer loop if inner loop wasn't broken
@@ -100,4 +99,8 @@ with tab2:
             break
 
         st.write(f"### Optimal Configuration: {optimal_config[0]} components and {optimal_config[1]} repairmen")
+        optimal_up_time = compute_up_time(optimal_config[0], optimal_config[1], failure_rate_b, repair_rate_b, warm_standby_b, num_required_b)
+        total_cost = compute_cost(optimal_config[0], optimal_config[1], failure_rate_b, repair_rate_b, warm_standby_b, num_required_b, component_cost, repair_cost, down_time_cost)
+        st.write(f"Optimal Up-Time Probability: {optimal_up_time:.4f}")
+        st.write(f"Total Cost: {total_cost:.2f}")
 
