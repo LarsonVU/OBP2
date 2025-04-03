@@ -87,10 +87,11 @@ with tab2:
         for comp in range(0, 170):
             for rep in range(0, 170): 
                 cost = compute_cost(comp, rep, failure_rate_b, repair_rate_b, warm_standby_b, num_required_b, component_cost, repair_cost, down_time_cost) 
+                print(comp, rep ,cost)  
                 if cost < min_cost:
                     min_cost = cost
-                    optimal_config = (comp, rep)  
-                elif comp > optimal_config[0] and rep > optimal_config[1] and comp > num_required_b:
+                    optimal_config = (comp, rep)
+                elif comp > optimal_config[0] and rep > optimal_config[1] and optimal_config[0] > num_required_b:
                     break
             else:
                 # Continue outer loop if inner loop wasn't broken
