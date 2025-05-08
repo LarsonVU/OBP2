@@ -21,7 +21,7 @@ def compute_wape(test_fit, test_actuals):
 
 def polynomial_forecast(df, degree=3, forecast_days=7):
     df["day_of_week"] = df["day"] % 7  # Intra-week seasonality
-    df["day_of_year"] = df["day"] % 365  # Intra-year seasonality
+    df["day_of_year"] = df["day"] % 52  # Intra-year seasonality
     df = pd.get_dummies(df, columns=["day_of_week", "day_of_year"], drop_first=True)
     train = df[:-70]
     test = df[-70:]
@@ -44,7 +44,7 @@ def polynomial_forecast(df, degree=3, forecast_days=7):
     # Forecast week 260
     forecast_days_idx = np.arange(1456, 1456 + forecast_days+1).reshape(-1, 1)
     weekdays = np.tile(np.arange(7), forecast_days +1 // 7 + 1)[:forecast_days+1]
-    year_days = np.tile(np.arange(365), forecast_days +1 // 365 + 1)[:forecast_days +1]
+    year_days = np.tile(np.arange(52), forecast_days +1 // 52 + 1)[:forecast_days +1]
     forecast_df = pd.DataFrame({"day_of_week": weekdays, "day_of_year": year_days})
     print(forecast_df.shape)
     forecast_df = pd.get_dummies(forecast_df, columns=["day_of_week", "day_of_year"], drop_first=True)
@@ -119,14 +119,14 @@ def optimize_shifts_integer(required_hours):
     shift_types = []
 
     # Create all valid 3-day 8h shifts (Mon–Fri)
-    for start in range(5):  # days 0–4
+    for start in range(5):  
         shift = [0]*7
         for i in range(3):
             shift[(start + i) % 7] = 8
         shift_types.append(shift)
 
     # Create all valid 4-day 6h shifts (Mon–Thu)
-    for start in range(4):  # days 0–3
+    for start in range(4): 
         shift = [0]*7
         for i in range(4):
             shift[(start + i) % 7] = 6
@@ -174,28 +174,59 @@ print(f"WAPE: {wape:.2%}")
 print("Forecast for the week 260:", forecast[-7:])
 plot_forecast(data, fit, forecast)
 
-volume = np.mean(forecast[-7:]) /14 # daily volume
+def plot_errors(actuals, fit, test_days=70):
+    # Calculate errors
+    errors = actuals["volume"] - fit
+
+    # Plot errors
+    plt.figure(figsize=(12, 6))
+    plt.scatter(actuals["day"], errors, label="Errors", color="blue")
+
+    # Highlight test set errors
+    test_start = actuals["day"].iloc[-test_days]
+    plt.axvspan(test_start, actuals["day"].iloc[-1], color="red", alpha=0.3, label="Test Set")
+
+    # Add labels and legend
+    plt.xlabel("Day")
+    plt.ylabel("Error (Actual - Fit)")
+    plt.title("Errors Over Days")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+plot_errors(data, fit)
+
+volume =forecast[-7:] /14 # daily volume
+print("Volume:", volume)
 aht = 5 / 60 #aht in hours
 patience = 10 /60 # patience in hours
-opening_hours = 14 *7 # 14 hours a day, 7 days a week
+opening_hours = 14 # 14 hours a day
 sevice_level_0 = 0.60
-c, agents = erlang_a_model(sevice_level_0, volume, aht, patience, opening_hours)
-print(f"Number of agents-hours needed: {c:.2f}")
+agent_hours = []
+for vol in volume:
+    c, agents = erlang_a_model(sevice_level_0, vol, aht, patience, opening_hours)
+    agent_hours.append(c)
+    print(f"Volume: {vol:.2f}, Number of agents-hours needed: {agents:.2f}")
+    print(f"Number of agents-hours needed: {c:.2f}")
 
-c_quarters = []
-quarters = np.linspace(0, 2, 7)
-for i in quarters:
-    c_quarter, agents = erlang_a_model(sevice_level_0, volume * i, aht, patience, opening_hours)
-    c_quarters.append(c_quarter)	
+c_quarters = [[] for _ in range(len(volume))]
+quarters = np.linspace(0, 2, 4)
+opening_hours = 14/4 # 14 hours a day, per quarter
 
-needed_agents = np.mean(c_quarters)
-print(f"Number of agents-hours needed (quarters): {needed_agents:.2f}")
+for j, vol in enumerate(volume):
+    for i in range(len(quarters)):
+        c_quarter, agents = erlang_a_model(sevice_level_0, vol * quarters[i], aht, patience, opening_hours)
+        c_quarters[j].append(c_quarter)
+        print(f"Number of agents-hours needed (Day {j}, quarter {i}): {c_quarter:.2f}")
 
-result, scheduled, inefficiency = optimize_shifts_integer(c_quarters)
+daily_hours = [sum(c_quarters[i]) for i in range(len(c_quarters))]
+print("Daily hours needed:", daily_hours)
+
+result, scheduled, inefficiency = optimize_shifts_integer(daily_hours)
 
 print("Optimal shifts:\n", [int(result[i]) for i in range(len(result))])
 print("Scheduled hours:\n", scheduled)
-print("Required hours:\n", c_quarters)
+print("Required hours:\n", daily_hours)
 print("Inefficiency:\n", inefficiency)
 
 
