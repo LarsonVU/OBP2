@@ -56,13 +56,28 @@ def polynomial_forecast(df, degree=3, forecast_days=7):
     weekday_coefficients = coefficients[poly.n_output_features_:poly.n_output_features_+7] 
     polynomial_coefficients = coefficients[:poly.n_output_features_]  # Polynomial coefficients
 
-    print("Polynomial Coefficients:")
-    for i, coef in enumerate(polynomial_coefficients):
-        print(f"Degree {i}: {coef:.4f}")
+    # === COEFFICIENTS ===
+    poly_feature_names = poly.get_feature_names_out(["day"])
+    full_feature_names = list(poly_feature_names)
 
-    print("\nWeekday Coefficients:")
-    for i, coef in enumerate(weekday_coefficients):
-        print(f"Weekday {i + 1}: {coef:.4f}")
+    dummy_columns = df.drop(columns=["day", "volume"]).columns
+    full_feature_names.extend(dummy_columns)
+
+    print("\n=== Polynomial Coefficients ===")
+    for name, coef in zip(full_feature_names[:len(poly_feature_names)], model.coef_[:len(poly_feature_names)]):
+        print(f"{name}: {coef:.4f}")
+
+    print("\n=== Weekday Dummy Coefficients ===")
+    weekday_dummies = [col for col in dummy_columns if "day_of_week" in col]
+    for name in weekday_dummies:
+        idx = full_feature_names.index(name)
+        print(f"{name}: {model.coef_[idx]:.4f}")
+
+    print("\n=== Year-Week Dummy Coefficients ===")
+    year_day_dummies = [col for col in dummy_columns if "Week_of_year" in col]
+    for name in year_day_dummies:
+        idx = full_feature_names.index(name)
+        print(f"{name}: {model.coef_[idx]:.4f}")
 
     return wape, fit, forecast
 
@@ -210,8 +225,8 @@ for vol in volume:
     print(f"Number of agents-hours needed: {c:.2f}")
 
 c_quarters = [[] for _ in range(len(volume))]
-quarters = np.linspace(0, 2, 4)
-opening_hours = 14/4 # 14 hours a day, per quarter
+quarters = np.linspace(0, 2, 4*14)
+opening_hours = 1/4 #  per quarter
 
 for j, vol in enumerate(volume):
     for i in range(len(quarters)):
