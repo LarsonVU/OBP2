@@ -20,6 +20,7 @@ def compute_wape(test_fit, test_actuals):
     return wape
 
 def polynomial_forecast(df, degree=3, forecast_days=7):
+    df['log_volume'] = np.log(df['volume'])
     df["day_of_week"] = df["day"] % 7  # Intra-week seasonality
     df["day_of_year"] = df["day"] % 52  # Intra-year seasonality
     df = pd.get_dummies(df, columns=["day_of_week", "day_of_year"], drop_first=True)
@@ -29,17 +30,19 @@ def polynomial_forecast(df, degree=3, forecast_days=7):
     poly = PolynomialFeatures(degree=degree)
 
     X_train = poly.fit_transform(train[["day"]])
-    X_train = np.hstack([X_train, train.drop(columns=["day", "volume"]).values])
-    y_train = train["volume"]
+    X_train = np.hstack([X_train, train.drop(columns=["day", "volume", "log_volume"]).values])
+    y_train = train["log_volume"]
     model = LinearRegression().fit(X_train, y_train)
 
     X_test = poly.transform(test[["day"]])
-    X_test = np.hstack([X_test, test.drop(columns=["day", "volume"]).values])
-    y_pred = model.predict(X_test)
+    X_test = np.hstack([X_test, test.drop(columns=["day", "volume", "log_volume"]).values])
+    y_pred_log = model.predict(X_test)
+    y_pred = np.exp(y_pred_log)  # Inverse log transformation
 
     wape = compute_wape(y_pred, test["volume"].values)
     fit = model.predict(np.hstack([poly.fit_transform(df[["day"]]), 
-                                    df.drop(columns=["day", "volume"]).values]))
+                                    df.drop(columns=["day", "volume", "log_volume"]).values]))
+    fit = np.exp(fit)  # Inverse log transformation
 
     # Forecast week 260
     forecast_days_idx = np.arange(1456, 1456 + forecast_days+1).reshape(-1, 1)
@@ -50,6 +53,7 @@ def polynomial_forecast(df, degree=3, forecast_days=7):
     forecast_df = pd.get_dummies(forecast_df, columns=["day_of_week", "day_of_year"], drop_first=True)
     X_forecast = np.hstack([poly.transform(forecast_days_idx), forecast_df.values])
     forecast = model.predict(X_forecast)
+    forecast = np.exp(forecast)  # Inverse log transformation
 
     # Print coefficients for weekday and polynomial trend
     coefficients = model.coef_
@@ -65,7 +69,7 @@ def polynomial_forecast(df, degree=3, forecast_days=7):
 
     print("\n=== Polynomial Coefficients ===")
     for name, coef in zip(full_feature_names[:len(poly_feature_names)], model.coef_[:len(poly_feature_names)]):
-        print(f"{name}: {coef:.4f}")
+        print(f"{name}: {coef:.8f}")
 
     print("\n=== Weekday Dummy Coefficients ===")
     weekday_dummies = [col for col in dummy_columns if "day_of_week" in col]
@@ -228,13 +232,17 @@ c_quarters = [[] for _ in range(len(volume))]
 quarters = np.linspace(0, 2, 4*14)
 opening_hours = 1/4 #  per quarter
 
+volume = volume * opening_hours
+aht = aht * opening_hours
+patience = patience * opening_hours
+
 for j, vol in enumerate(volume):
     for i in range(len(quarters)):
-        c_quarter, agents = erlang_a_model(sevice_level_0, vol * quarters[i], aht, patience, opening_hours)
+        c_quarter, agents = erlang_a_model(sevice_level_0, vol * quarters[i], aht, patience, 1)
         c_quarters[j].append(c_quarter)
-        print(f"Number of agents-hours needed (Day {j}, quarter {i}): {c_quarter:.2f}")
+        print(f"Number of agents-hours needed (Day {j}, quarter {i}): {c_quarter/ opening_hours:.2f}")
 
-daily_hours = [sum(c_quarters[i]) for i in range(len(c_quarters))]
+daily_hours = [sum(c_quarters[i]) /opening_hours for i in range(len(c_quarters))]
 print("Daily hours needed:", daily_hours)
 
 result, scheduled, inefficiency = optimize_shifts_integer(daily_hours)
