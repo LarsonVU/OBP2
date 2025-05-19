@@ -104,4 +104,3 @@ with tab2:
         total_cost = compute_cost(optimal_config[0], optimal_config[1], failure_rate_b, repair_rate_b, warm_standby_b, num_required_b, component_cost, repair_cost, down_time_cost)
         st.write(f"Optimal Up-Time Probability: {optimal_up_time:.4f}")
         st.write(f"Total Cost: {total_cost:.2f}")
-
